@@ -1,44 +1,40 @@
 name: Build Chutuki Assistant APK
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-    
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
+
+    - uses: actions/checkout@v3
+
+    - uses: actions/setup-java@v3
       with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
-    
-    - name: Grant execute permission for gradlew
+        java-version: "17"
+        distribution: "temurin"
+
+    - uses: android-actions/setup-android@v3
+
+    - name: Accept Licenses
+      run: yes | sdkmanager --licenses
+
+    - name: Grant Permission
       run: chmod +x gradlew
-    
+
     - name: Create local.properties
       run: |
-        echo "PICOVOICE_ACCESS_KEY=demo_key_for_testing" > local.properties
-    
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace
-    
-    - name: Upload APK as Artifact
-      uses: actions/upload-artifact@v3
+        echo "WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}" > local.properties
+        echo "PICOVOICE_ACCESS_KEY=${{ secrets.PICOVOICE_ACCESS_KEY }}" >> local.properties
+
+    - name: Build APK
+      run: ./gradlew assembleDebug
+
+    - uses: actions/upload-artifact@v4
       with:
-        name: chutuki-assistant-apk
+        name: chutuki-apk
         path: app/build/outputs/apk/debug/app-debug.apk
-        retention-days: 30
-    
-    - name: Build Success Notification
-      if: success()
-      run: echo "✅ APK Build Success
